@@ -24,7 +24,7 @@ n8n
 
 Google Sheets – Content & schedule source
 
-Trwly AI
+Tavily AI
  – Content generator
 
 OpenAI
@@ -48,7 +48,7 @@ Logging – Updates Google Sheet with results or errors.
 
 ⚙️ Setup Instructions
 1. Clone Repo
-git clone https://github.com/your-username/linkedin-automation.git
+
 cd linkedin-automation
 
 2. Setup n8n
@@ -67,8 +67,6 @@ Add LinkedIn API token.
 
 4. Update Google Sheet
 
-Your sheet should include columns like:
-status | scheduled_at | topic | caption | image_url | hashtags | result_links | last_error
 
 5. Run Workflow
 
