@@ -1,0 +1,686 @@
+{
+  "name": "linkidin content creator",
+  "nodes": [
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        3616,
+        4100
+      ],
+      "id": "316e66e4-080d-4fc3-9240-ab70ad5c4f0e",
+      "name": "Wait for image (safety)",
+      "webhookId": "2c138750-8ebc-40f8-bc5c-f686c9c3a035"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=LinkedIn Post: \n{{ $json.output }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are an AI agent that transforms LinkedIn posts into visual prompt descriptions for generating graphic marketing materials. Output only the final image prompt."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        2816,
+        3976
+      ],
+      "id": "115254fb-8fb5-42e7-8495-96a3aab50cf9",
+      "name": "Image Prompt Agent1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.stability.ai/v2beta/stable-image/generate/ultra",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "authorization",
+              "value": "Bearer sk-53JbjMOK37NRZqcvFCDOrbd07iIp1i3JChLODVs876Tg078k"
+            },
+            {
+              "name": "accept",
+              "value": "image/*"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "Lighthouse on a cliff overlooking the ocean"
+            },
+            {
+              "name": "output_format",
+              "value": "webp"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "./lighthouse.webp"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3168,
+        3976
+      ],
+      "id": "37f0da8e-cc66-4a4c-995e-58060bc43a2a",
+      "name": "Generate Image2"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data[0].b64_json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        3392,
+        3976
+      ],
+      "id": "b9642ba4-aeda-4e89-a781-ba33c90b1079",
+      "name": "Convert to Binary1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2888,
+        4200
+      ],
+      "id": "47486920-80e5-4144-9850-a2fd83a78bc0",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "TBS1Szt2XUluBSpD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d0fa4b1a-cffa-4cba-8e99-707cc6a7fbac",
+              "leftValue": "={{ $('Linkdin content sheat').item.json.imageurl }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2592,
+        4100
+      ],
+      "id": "ac72d89d-8104-4267-8b62-02b119e01775",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "downloadUrl",
+              "value": "={{ $('Linkdin content sheat').item.json.imageurl }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "221ca949-3d66-48cb-8829-2e3a151b32e2",
+      "name": "Build Direct Download URL",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        3168,
+        4224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $json.Topic }}\",\n  \"auto_parameters\": false,\n  \"topic\": \"general\",\n  \"search_depth\": \"basic\",\n  \"chunks_per_source\": 3,\n  \"max_results\": 3,\n  \"time_range\": null,\n  \"days\": 7,\n  \"include_answer\": true,\n  \"include_raw_content\": true,\n  \"include_images\": false,\n  \"include_image_descriptions\": false,\n  \"include_favicon\": false,\n  \"include_domains\": [],\n  \"exclude_domains\": [],\n  \"country\": null\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        4064
+      ],
+      "id": "e06561c7-fc30-4ff4-be2a-a1e015a46976",
+      "name": "Tavily"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1WPnJYuh6qI4s0Cw-idZFYl30O_ZiS1ObsZpkKrthPk4",
+          "mode": "list",
+          "cachedResultName": "linkdin content automatiom",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WPnJYuh6qI4s0Cw-idZFYl30O_ZiS1ObsZpkKrthPk4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WPnJYuh6qI4s0Cw-idZFYl30O_ZiS1ObsZpkKrthPk4/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Todo"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        4100
+      ],
+      "id": "dd1b0dc7-6868-40a5-9d99-4c2c4350cbf5",
+      "name": "Linkdin content sheat",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QpP84drXfHx5GxY3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Article 1 {{ $json.results[0].content }}\nArticle 2 {{ $json.results[1].content }}\nArticle 3 {{ $json.results[2].content }}",
+        "options": {
+          "systemMessage": "You are a professional content creator specializing in LinkedIn posts.\n\nHere are three articles:\nArticle 1: {{ $json.results[0].content }}\nArticle 2: {{ $json.results[1].content }}\nArticle 3: {{ $json.results[2].content }}\n\nTask:\n\nAnalyze all articles and extract the most accurate, up-to-date, and relevant insights.\n\nSummarize them into ONE concise LinkedIn post (max 200 words).\n\nFormat the post in a human-like style:\n\nBegin with a bold headline (**Your Headline Here**) that hooks attention.\n\nPresent key insights as bullet points (•) or numbered points (1,2,3).\n\nUse line breaks for readability.\n\nAdd relevant emojis (✅, 📊, 💡, 🚀, 🔑, etc.) to highlight points and make the post visually appealing.\n\nEnd with a short takeaway or call-to-action (e.g., a question to the audience).\n\nKeep the tone professional, engaging, and suitable for LinkedIn audiences.\n\nConclude with 5 trending LinkedIn hashtags relevant to the topic (short, lowercase, no spaces, e.g. #ai #innovation #leadership).\n\nReturn only the final LinkedIn post in this bold-headline, bullet-point, emoji-enhanced format."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2240,
+        4100
+      ],
+      "id": "c72a975a-cb90-4b3e-9496-770bae94dac7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1WPnJYuh6qI4s0Cw-idZFYl30O_ZiS1ObsZpkKrthPk4",
+          "mode": "list",
+          "cachedResultName": "linkdin content automatiom",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WPnJYuh6qI4s0Cw-idZFYl30O_ZiS1ObsZpkKrthPk4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WPnJYuh6qI4s0Cw-idZFYl30O_ZiS1ObsZpkKrthPk4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": 0,
+            "Topic": "={{ $('Tavily').item.json.query }}",
+            "Content": "={{ $('Build Direct Download URL').item.json.output }}",
+            "Status": "created",
+            "linkdin posting ": "={{ $json.urn }}"
+          },
+          "matchingColumns": [
+            "Topic"
+          ],
+          "schema": [
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Content",
+              "displayName": "Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Target Audiance",
+              "displayName": "Target Audiance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "imageurl",
+              "displayName": "imageurl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "linkdin posting ",
+              "displayName": "linkdin posting ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4272,
+        4100
+      ],
+      "id": "394edf16-fdef-4e5f-b4c9-1504d57f4ae1",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QpP84drXfHx5GxY3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "person": "efoqaOa_87",
+        "text": "={{ $json.output }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {
+          "visibility": "PUBLIC"
+        }
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        4048,
+        4100
+      ],
+      "id": "a14ef947-0332-4779-961d-f1b294627a1d",
+      "name": "Create a post",
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "FXaldwwe5ZzKHG0L",
+          "name": "LinkedIn account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2312,
+        4324
+      ],
+      "id": "c8d540be-69c8-49d7-9169-12270b89c247",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "TBS1Szt2XUluBSpD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.downloadUrl }}",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3344,
+        4224
+      ],
+      "id": "712624cd-69bf-4ab2-9785-417d4c5fff1b",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "kYXacZOe8cnR1BEP",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "79989937-6811-4e3c-99a8-1c2f69e4fe30",
+      "name": "When clicking ‘Execute workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        3840
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1520,
+        4096
+      ],
+      "id": "87de7f08-b3bc-40af-9b0c-59ba7fa105be",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Wait for image (safety)": {
+      "main": [
+        [
+          {
+            "node": "Create a post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Prompt Agent1": {
+      "main": [
+        [
+          {
+            "node": "Generate Image2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image2": {
+      "main": [
+        [
+          {
+            "node": "Convert to Binary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Binary1": {
+      "main": [
+        [
+          {
+            "node": "Wait for image (safety)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Image Prompt Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Image Prompt Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Direct Download URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Direct Download URL": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkdin content sheat": {
+      "main": [
+        [
+          {
+            "node": "Tavily",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a post": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Wait for image (safety)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        []
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Linkdin content sheat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "989f0a86-b89a-4343-90ee-d454051c60fb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6360447660033a349e9a3275acb0ae3b2f172823b6088359c2e7d498d27af5cf"
+  },
+  "id": "almcOQuiR05cok9G",
+  "tags": []
+}
